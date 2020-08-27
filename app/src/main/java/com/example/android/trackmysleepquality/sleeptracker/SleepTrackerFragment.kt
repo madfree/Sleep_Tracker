@@ -59,12 +59,9 @@ class SleepTrackerFragment : Fragment() {
 
         val sleepTrackerViewModel = ViewModelProvider(this, viewModelFactory).get(SleepTrackerViewModel::class.java)
 
-        val adapter = SleepNightAdapter(SleepNightListener { nightId ->
-            Toast.makeText(context, "${nightId}", Toast.LENGTH_LONG).show()
-        })
+        binding.sleepTrackerViewModel = sleepTrackerViewModel
 
-        val manager = GridLayoutManager(activity, 3)
-        binding.sleepList.layoutManager = manager
+        binding.setLifecycleOwner(this)
 
         sleepTrackerViewModel.navigateToSleepQuality.observe(viewLifecycleOwner, Observer { night ->
             night?.let {
@@ -86,17 +83,28 @@ class SleepTrackerFragment : Fragment() {
             }
         })
 
+        sleepTrackerViewModel.navigateToSleepDataQuality.observe(viewLifecycleOwner, Observer { night ->
+            night?.let {
+                this.findNavController().navigate(SleepTrackerFragmentDirections
+                        .actionSleepTrackerFragmentToSleepDetailFragment(night))
+                sleepTrackerViewModel.onSleepNightQualityNavigated()
+            }
+        })
+
+        val manager = GridLayoutManager(activity, 3)
+        binding.sleepList.layoutManager = manager
+
+        val adapter = SleepNightAdapter(SleepNightListener { nightId ->
+            sleepTrackerViewModel.onSleepNightClicked(nightId)
+        })
+
+        binding.sleepList.adapter = adapter
+
         sleepTrackerViewModel.nights.observe(viewLifecycleOwner, Observer {
             it?.let {
                 adapter.submitList(it)
             }
         })
-
-        binding.sleepTrackerViewModel = sleepTrackerViewModel
-
-        binding.sleepList.adapter = adapter
-
-        binding.setLifecycleOwner(this)
 
         return binding.root
     }
